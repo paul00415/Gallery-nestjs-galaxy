@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@n
 import { PhotosService } from './photos.service';
 import { CreatePhotoDto } from './dto/create-photo.dto';
 import { UpdatePhotoDto } from './dto/update-photo.dto';
+import { SearchPhotoDto } from './dto/search-photo.dto';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorator/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
@@ -14,13 +15,21 @@ export class PhotosController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Post()
-  create(@CurrentUser() user: { userId: number }, @Body() dto: CreatePhotoDto) {
+  create(
+    @CurrentUser() user: { userId: number }, 
+    @Body() dto: CreatePhotoDto
+  ) {
     return this.photosService.create(user.userId, dto);
   }
 
   @Get()
   findAll() {
     return this.photosService.findAll();
+  }
+
+  @Post('search')
+  search(@Body() dto: SearchPhotoDto) {
+    return this.photosService.search(dto.keyword);
   }
 
   @Get(':id')

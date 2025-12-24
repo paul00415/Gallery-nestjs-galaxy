@@ -25,6 +25,24 @@ export class PhotosService {
     });
   }
 
+  search(keyword?: string) {
+    if (!keyword) {
+      return this.findAll();
+    }
+    return this.prisma.photo.findMany({
+      where: {
+        OR: [
+          { title: { contains: keyword } },
+          { desc: { contains: keyword } },
+        ],
+      },
+      include: {
+        poster: { select: { id: true, name: true, email: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async findOne(id: number) {
     const photo = await this.prisma.photo.findUnique({
       where: { id },
