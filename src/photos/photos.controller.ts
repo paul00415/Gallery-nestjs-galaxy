@@ -31,14 +31,21 @@ export class PhotosController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdatePhotoDto) {
-    return this.photosService.update(Number(id), dto);
+  update(
+    @Param('id') id: string, 
+    @CurrentUser() user: { userId: number },
+    @Body() dto: UpdatePhotoDto
+  ) {
+    return this.photosService.update(Number(id), user.userId, dto);
   }
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.photosService.remove(Number(id));
+  remove(
+    @Param('id') id: string,
+    @CurrentUser() user: { userId: number }
+  ) {
+    return this.photosService.remove(Number(id), user.userId);
   }
 }

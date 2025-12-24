@@ -34,18 +34,24 @@ export class PhotosService {
     return photo;
   }
 
-  async update(id: number, dto: UpdatePhotoDto) {
+  async update(id: number, userId: number, dto: UpdatePhotoDto) {
     const photo = await this.prisma.photo.findUnique({ where: { id } });
     if (!photo) throw new NotFoundException('Photo not found');
+    if (photo.posterId !== userId) {
+      throw new NotFoundException('You can only update your own photos');
+    }
     return this.prisma.photo.update({
       where: { id },
       data: dto,
     });
   }
 
-  async remove(id: number) {
+  async remove(id: number, userId: number) {
     const photo = await this.prisma.photo.findUnique({ where: { id } });
     if (!photo) throw new NotFoundException('Photo not found');
+    if (photo.posterId !== userId) {
+      throw new NotFoundException('You can only delete your own photos');
+    }
     return this.prisma.photo.delete({ where: { id } });
   }
 }
