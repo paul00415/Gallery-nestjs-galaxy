@@ -32,6 +32,11 @@ export class PhotosController {
     return this.photosService.search(dto.keyword);
   }
 
+  @Get('recent')
+  recent() {
+    return this.photosService.recent();
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.photosService.findOne(Number(id));

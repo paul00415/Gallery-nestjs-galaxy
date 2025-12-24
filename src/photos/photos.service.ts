@@ -43,6 +43,16 @@ export class PhotosService {
     });
   }
 
+  async recent() {
+    return this.prisma.photo.findMany({
+      take: 10,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        poster: { select: { id: true, name: true, email: true } },
+      },
+    });
+  }
+
   async findOne(id: number) {
     const photo = await this.prisma.photo.findUnique({
       where: { id },
