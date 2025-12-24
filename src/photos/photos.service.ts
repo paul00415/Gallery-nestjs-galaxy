@@ -1,23 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePhotoDto } from './dto/create-photo.dto';
+import { UpdatePhotoDto } from './dto/update-photo.dto';
 
 @Injectable()
 export class PhotosService {
   constructor(private prisma: PrismaService) {}
 
-  create(dto: CreatePhotoDto) {
+  async create(userId: number, dto: CreatePhotoDto) {
     return this.prisma.photo.create({
       data: {
-        title: dto.title,
-        desc: dto.desc,
-        imageUrl: dto.imageUrl,
-        posterId: dto.posterId,
-      },
-      include: {
-        poster: {
-          select: { id: true, name: true, email: true },
-        },
+        ...dto,
+        posterId: userId,
       },
     });
   }
@@ -25,11 +19,33 @@ export class PhotosService {
   findAll() {
     return this.prisma.photo.findMany({
       include: {
-        poster: {
-          select: { id: true, name: true },
-        },
+        poster: { select: { id: true, name: true, email: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  async findOne(id: number) {
+    const photo = await this.prisma.photo.findUnique({
+      where: { id },
+      include: { poster: { select: { id: true, name: true } } },
+    });
+    if (!photo) throw new NotFoundException('Photo not found');
+    return photo;
+  }
+
+  async update(id: number, dto: UpdatePhotoDto) {
+    const photo = await this.prisma.photo.findUnique({ where: { id } });
+    if (!photo) throw new NotFoundException('Photo not found');
+    return this.prisma.photo.update({
+      where: { id },
+      data: dto,
+    });
+  }
+
+  async remove(id: number) {
+    const photo = await this.prisma.photo.findUnique({ where: { id } });
+    if (!photo) throw new NotFoundException('Photo not found');
+    return this.prisma.photo.delete({ where: { id } });
   }
 }

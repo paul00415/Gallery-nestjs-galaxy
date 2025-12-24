@@ -1,20 +1,18 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsString } from 'class-validator';
+import { IsString, IsNotEmpty } from 'class-validator';
 
 export class CreatePhotoDto {
-  @ApiProperty()
+  @ApiProperty({ example: 'Sunset at the beach' })
   @IsString()
+  @IsNotEmpty()
   title: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'A beautiful sunset at the beach during summer.' })
   @IsString()
   desc: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'https://example.com/image.jpg' })
   @IsString()
+  @IsNotEmpty()
   imageUrl: string;
-
-  @ApiProperty()
-  @IsInt()
-  posterId: number;
 }
