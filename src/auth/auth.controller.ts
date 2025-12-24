@@ -29,7 +29,9 @@ export class AuthController {
   getMe(@CurrentUser() user: { userId: number }) {
     return this.authService.getMe(user.userId);
   }
-
+  
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Post('refresh')
   refresh(@Body() dto: RefreshDto) {
     return this.authService.refreshTokens(dto.refreshToken);
