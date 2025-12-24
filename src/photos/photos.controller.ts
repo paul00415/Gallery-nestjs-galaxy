@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { PhotosService } from './photos.service';
 import { CreatePhotoDto } from './dto/create-photo.dto';
 import { UpdatePhotoDto } from './dto/update-photo.dto';
@@ -22,9 +22,9 @@ export class PhotosController {
     return this.photosService.create(user.userId, dto);
   }
 
-  @Get()
-  findAll() {
-    return this.photosService.findAll();
+  @Get() // cursor is id of the last photo the client already has
+  findAll(@Query('cursor') cursor?:string) { // infinite scroll loading
+    return this.photosService.findAll(cursor ? Number(cursor) : undefined);
   }
 
   @Post('search')

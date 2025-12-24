@@ -16,11 +16,11 @@ export class PhotosService {
     });
   }
 
-  findAll() {
+  findAll(cursor?: number) {
     return this.prisma.photo.findMany({
-      include: {
-        poster: { select: { id: true, name: true, email: true } },
-      },
+      take: 10,
+      skip: cursor ? 1 : 0,
+      cursor: cursor ? { id: cursor } : undefined,
       orderBy: { createdAt: 'desc' },
     });
   }
