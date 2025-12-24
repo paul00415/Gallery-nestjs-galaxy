@@ -11,6 +11,7 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
+      transform: true,
     }),
   );
 
@@ -19,6 +20,7 @@ async function bootstrap() {
     .setTitle('Gallery API')
     .setDescription('API documentation for Gallery backend')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
