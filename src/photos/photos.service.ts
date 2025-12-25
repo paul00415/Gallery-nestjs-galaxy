@@ -1,11 +1,43 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePhotoDto } from './dto/create-photo.dto';
 import { UpdatePhotoDto } from './dto/update-photo.dto';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { wasabiClient } from 'src/common/wasabi.client';
+import { v4 as uuid } from 'uuid';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
 
 @Injectable()
 export class PhotosService {
   constructor(private prisma: PrismaService) {}
+
+  async getSignedUploadUrl(mimeType: string) {
+    if (!mimeType) {
+      throw new BadRequestException('mimeType is required');
+    }
+
+    if (!mimeType.startsWith('image/')) {
+      throw new BadRequestException('Only image files are allowed');
+    }
+
+    const fileExt = mimeType.split('/')[1];
+    const fileName = `photos/${uuid()}.${fileExt}`;
+
+    const command = new PutObjectCommand({
+      Bucket: process.env.WASABI_BUCKET,
+      Key: fileName,
+      ContentType: mimeType,
+    });
+
+    const signedUrl = await getSignedUrl(wasabiClient, command, {
+      expiresIn: 60 * 5, // 5 minutes
+    });
+
+    return {
+      uploadUrl: signedUrl,
+      fileUrl: `${process.env.WASABI_ENDPOINT}/${process.env.WASABI_BUCKET}/${fileName}`,
+    };
+  }
 
   async create(userId: number, dto: CreatePhotoDto) {
     return this.prisma.photo.create({

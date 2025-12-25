@@ -3,7 +3,8 @@ import { PhotosService } from './photos.service';
 import { CreatePhotoDto } from './dto/create-photo.dto';
 import { UpdatePhotoDto } from './dto/update-photo.dto';
 import { SearchPhotoDto } from './dto/search-photo.dto';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { SignedUrlDto } from './dto/signed-url.dto';
+import { ApiTags, ApiBearerAuth, ApiOperation,  } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorator/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 
@@ -12,8 +13,18 @@ import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 export class PhotosController {
   constructor(private readonly photosService: PhotosService) {}
 
+  // 🔹 Get signed URL
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Post('signed-url')
+  @ApiOperation({ summary: 'Get signed URL for image upload' })
+  getSignedUrl(@Body() dto: SignedUrlDto) {
+    return this.photosService.getSignedUploadUrl(dto.mimeType);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create photo' })
   @Post()
   create(
     @CurrentUser() user: { userId: number }, 
