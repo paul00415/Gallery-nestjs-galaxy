@@ -17,8 +17,13 @@ model User {
   id           Int      @id @default(autoincrement())
   name         String
   email        String   @unique
-  password     String
+  password     String?
+
+  googleId     String? @unique
+
   refreshToken String?  @db.Text
+
+  isEmailVerified Boolean @default(false)
   createdAt    DateTime @default(now())
 
   // Keep only this, no duplicates:
