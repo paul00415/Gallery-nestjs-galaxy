@@ -1,26 +1,27 @@
-# -------- Base image --------
-FROM node:20-alpine
-
-# -------- Set working dir --------
+# ---------- Base ----------
+FROM node:20-alpine AS base
 WORKDIR /app
 
-# -------- Copy package files --------
+# ---------- Dependencies ----------
+FROM base AS deps
 COPY package*.json ./
-
-# -------- Install dependencies --------
 RUN npm install
 
-# -------- Copy source --------
+# ---------- Build ----------
+FROM deps AS build
 COPY . .
-
-# -------- Generate Prisma Client --------
+RUN npm run build
 RUN npx prisma generate
 
-# -------- Build NestJS --------
-RUN npm run build
+# ---------- Production ----------
+FROM node:20-alpine AS production
+WORKDIR /app
 
-# -------- Expose port --------
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/prisma ./prisma
+COPY package*.json ./
+
 EXPOSE 3000
 
-# -------- Start app --------
 CMD ["node", "dist/main.js"]
