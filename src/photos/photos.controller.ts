@@ -1,54 +1,84 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Query,
+} from '@nestjs/common';
 import { PhotosService } from './photos.service';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+} from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorator/current-user.decorator';
+
 import { CreatePhotoDto } from './dto/create-photo.dto';
 import { UpdatePhotoDto } from './dto/update-photo.dto';
 import { SearchPhotoDto } from './dto/search-photo.dto';
 import { SignedUrlDto } from './dto/signed-url.dto';
-import { ApiTags, ApiBearerAuth, ApiOperation,  } from '@nestjs/swagger';
-import { CurrentUser } from '../auth/decorator/current-user.decorator';
-import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 
 @ApiTags('photos')
 @Controller('photos')
 export class PhotosController {
   constructor(private readonly photosService: PhotosService) {}
 
-  // 🔹 Get signed URL
+  // SIGNED URLS
+
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @Post('signed-url')
+  @Post('signed-upload')
   @ApiOperation({ summary: 'Get signed URL for image upload' })
-  getSignedUrl(@Body() dto: SignedUrlDto) {
+  getSignedUploadUrl(@Body() dto: SignedUrlDto) {
     return this.photosService.getSignedUploadUrl(dto.mimeType);
   }
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create photo' })
+  @Get('signed-view/:key')
+  @ApiOperation({ summary: 'Get signed URL for image view' })
+  getSignedViewUrl(@Param('key') key: string) {
+    return this.photosService.getSignedViewUrl(key);
+  }
+
+  // CRUD
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Post()
+  @ApiOperation({ summary: 'Create photo' })
   create(
-    @CurrentUser() user: { userId: number }, 
-    @Body() dto: CreatePhotoDto
+    @CurrentUser() user: { userId: number },
+    @Body() dto: CreatePhotoDto,
   ) {
     return this.photosService.create(user.userId, dto);
   }
 
-  @Get() // cursor is id of the last photo the client already has
-  findAll(@Query('cursor') cursor?:string) { // infinite scroll loading
+  @Get()
+  @ApiOperation({ summary: 'Get all photos (infinite scroll)' })
+  findAll(@Query('cursor') cursor?: string) {
     return this.photosService.findAll(cursor ? Number(cursor) : undefined);
   }
 
-  @Post('search')
-  search(@Body() dto: SearchPhotoDto) {
-    return this.photosService.search(dto.keyword);
-  }
-
   @Get('recent')
+  @ApiOperation({ summary: 'Get recent photos' })
   recent() {
     return this.photosService.recent();
   }
 
+  @Post('search')
+  @ApiOperation({ summary: 'Search photos' })
+  search(@Body() dto: SearchPhotoDto) {
+    return this.photosService.search(dto.keyword);
+  }
+
   @Get(':id')
+  @ApiOperation({ summary: 'Get photo by id' })
   findOne(@Param('id') id: string) {
     return this.photosService.findOne(Number(id));
   }
@@ -56,10 +86,11 @@ export class PhotosController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Patch(':id')
+  @ApiOperation({ summary: 'Update photo' })
   update(
-    @Param('id') id: string, 
+    @Param('id') id: string,
     @CurrentUser() user: { userId: number },
-    @Body() dto: UpdatePhotoDto
+    @Body() dto: UpdatePhotoDto,
   ) {
     return this.photosService.update(Number(id), user.userId, dto);
   }
@@ -67,9 +98,10 @@ export class PhotosController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete photo' })
   remove(
     @Param('id') id: string,
-    @CurrentUser() user: { userId: number }
+    @CurrentUser() user: { userId: number },
   ) {
     return this.photosService.remove(Number(id), user.userId);
   }

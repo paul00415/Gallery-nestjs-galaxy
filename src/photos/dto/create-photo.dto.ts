@@ -14,5 +14,5 @@ export class CreatePhotoDto {
   @ApiProperty({ example: 'https://example.com/image.jpg' })
   @IsString()
   @IsNotEmpty()
-  imageUrl: string;
+  imageUrl: string; 
 }
