@@ -74,15 +74,13 @@ export class AuthService {
       throw new ForbiddenException('Email not verified');
     }
 
-    const tokens = await this.signTokens(user.id, user.email);
-    await this.updateRefreshTokenHash(user.id, tokens.refreshToken);
+    const {accessToken, refreshToken} = await this.signTokens(user.id, user.email);
+    await this.updateRefreshTokenHash(user.id, refreshToken);
 
-    return tokens;
+    return { accessToken, user };
   }
 
-  // ===============================
-  // GOOGLE LOGIN  ✅ (THIS WAS MISSING)
-  // ===============================
+  // GOOGLE LOGIN
   async googleLogin(googleUser: {
     email: string;
     name: string;
@@ -231,7 +229,7 @@ export class AuthService {
         data: { isEmailVerified: true },
       });
 
-      return { message: 'Email verified successfully' };
+      return { message: 'Email verified successfully. Please login' };
     } catch {
       throw new BadRequestException('Invalid or expired token');
     }
