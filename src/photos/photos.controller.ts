@@ -62,7 +62,7 @@ export class PhotosController {
   @Get()
   @ApiOperation({ summary: 'Get all photos (infinite scroll)' })
   findAll(@Query('cursor') cursor?: string) {
-    return this.photosService.findAll(cursor ? Number(cursor) : undefined);
+    return this.photosService.findAll(cursor ? Number(cursor) : 0);
   }
 
   @Get('recent')
