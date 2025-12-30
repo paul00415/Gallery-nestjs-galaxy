@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePhotoDto } from './dto/create-photo.dto';
 import { UpdatePhotoDto } from './dto/update-photo.dto';
@@ -56,20 +56,23 @@ export class PhotosService {
   }
 
   async create(userId: number, dto: CreatePhotoDto) {
-    return this.prisma.photo.create({
+    const newPhoto = await this.prisma.photo.create({
       data: {
         ...dto,
         posterId: userId,
       },
     });
+    return {
+      ...newPhoto, imageUrl: await this.getSignedViewUrl(newPhoto.imageUrl),
+    }
   }
 
   async findAll(cursor?: number) {
     const photos = await this.prisma.photo.findMany({
-      take: 10,
+      take: 3,
       skip: cursor ? 1 : 0,
       cursor: cursor ? { id: cursor } : undefined,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { id: 'desc' },
       include: {
         poster: { select: { id: true, name: true }},
       }
@@ -83,6 +86,44 @@ export class PhotosService {
     )
   }
 
+  async findOwners(userId, cursor?: number) {
+    // const photos = await this.prisma.photo.findMany({
+    //   where: {
+    //     posterId: userId
+    //   },
+    //   take: 3,
+    //   skip: cursor ? 1 : 0,
+    //   cursor: cursor ? { id: cursor } : undefined,
+    //   orderBy: { id: 'desc' },
+    //   include: {
+    //     poster: { select: { id: true, name: true }},
+    //   }
+    // });
+
+    // return Promise.all(
+    //   photos.map(async (photo) => ({
+    //     ...photo,
+    //     imageUrl: await this.getSignedViewUrl(photo.imageUrl),
+    //   }))
+    // )
+    const photos = await this.prisma.photo.findMany({
+      take: 3,
+      skip: cursor ? 1 : 0,
+      cursor: cursor ? { id: cursor } : undefined,
+      orderBy: { id: 'desc' },
+      include: {
+        poster: { select: { id: true, name: true }},
+      }
+    });
+
+    return Promise.all(
+      photos.map(async (photo) => ({
+        ...photo,
+        imageUrl: await this.getSignedViewUrl(photo.imageUrl),
+      }))
+    )
+  }
+  
   async findOne(id: number) {
     const photo = await this.prisma.photo.findUnique({
       where: { id },
@@ -135,20 +176,33 @@ export class PhotosService {
 
   async update(id: number, userId: number, dto: UpdatePhotoDto) {
     const photo = await this.prisma.photo.findUnique({ where: { id } });
-    if (!photo) throw new NotFoundException('Photo not found');
+
+    if (!photo) {
+      throw new NotFoundException('Photo not found');
+    }
     if (photo.posterId !== userId) {
-      throw new NotFoundException('You can only update your own photos');
+      throw new ForbiddenException('You can only update your own photos');
     }
 
-    // ❗ Prevent image replacement
-    const { imageUrl, ...safeDto } = dto as any;
+    const data: Partial<UpdatePhotoDto> = {
+      title: dto.title,
+      desc: dto.desc,
+    };
+    // update image ONLY if provided
+    if (dto.imageUrl) {
+      data.imageUrl = dto.imageUrl;
+    }
 
-    return this.prisma.photo.update({
+    const updatedPhoto = await this.prisma.photo.update({
       where: { id },
-      data: safeDto,
+      data,
     });
-  }
 
+    return {
+      ...updatedPhoto,
+      imageUrl: await this.getSignedViewUrl(updatedPhoto.imageUrl)
+    }
+  }
 
   async remove(id: number, userId: number) {
     const photo = await this.prisma.photo.findUnique({ where: { id } });

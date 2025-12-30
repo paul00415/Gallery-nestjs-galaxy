@@ -65,6 +65,17 @@ export class PhotosController {
     return this.photosService.findAll(cursor ? Number(cursor) : 0);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Get('owner')
+  @ApiOperation({ summary: 'Get all owner photos (infinite scroll)' })
+  owner(
+    @CurrentUser() user: { userId: number },
+    @Query('cursor') cursor?: string
+  ) {
+    return this.photosService.findOwners(user.userId, cursor ? Number(cursor) : 0);
+  }
+
   @Get('recent')
   @ApiOperation({ summary: 'Get recent photos' })
   recent() {
@@ -106,3 +117,4 @@ export class PhotosController {
     return this.photosService.remove(Number(id), user.userId);
   }
 }
+
