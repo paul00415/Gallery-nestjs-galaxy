@@ -63,9 +63,13 @@ export class PhotosController {
   @ApiOperation({ summary: 'Get photos (search + infinite scroll)' })
   findAll(
     @Query('query') query?: string,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit = '12',
   ) {
     return this.photosService.findAll({
       query,
+      cursor: cursor ? Number(cursor) : undefined,
+      limit: Number(limit),
     });
   }
 
