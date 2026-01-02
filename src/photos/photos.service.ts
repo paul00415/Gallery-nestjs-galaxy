@@ -67,49 +67,51 @@ export class PhotosService {
     }
   }
 
-  async findAll(cursor?: number) {
+  async findAll({
+  query,
+  }: {
+    query?: string;
+  }) {
     const photos = await this.prisma.photo.findMany({
-      take: 3,
-      skip: cursor ? 1 : 0,
-      cursor: cursor ? { id: cursor } : undefined,
+      where: query
+        ? {
+            OR: [
+              { title: { contains: query } },
+              { desc: { contains: query } },
+            ],
+          }
+        : undefined,
       orderBy: { id: 'desc' },
       include: {
-        poster: { select: { id: true, name: true }},
-      }
+        poster: { select: { id: true, name: true } },
+      },
     });
 
     return Promise.all(
       photos.map(async (photo) => ({
         ...photo,
         imageUrl: await this.getSignedViewUrl(photo.imageUrl),
-      }))
-    )
+      })),
+    );
   }
 
-  async findOwners(userId, cursor?: number) {
-    // const photos = await this.prisma.photo.findMany({
-    //   where: {
-    //     posterId: userId
-    //   },
-    //   take: 3,
-    //   skip: cursor ? 1 : 0,
-    //   cursor: cursor ? { id: cursor } : undefined,
-    //   orderBy: { id: 'desc' },
-    //   include: {
-    //     poster: { select: { id: true, name: true }},
-    //   }
-    // });
-
-    // return Promise.all(
-    //   photos.map(async (photo) => ({
-    //     ...photo,
-    //     imageUrl: await this.getSignedViewUrl(photo.imageUrl),
-    //   }))
-    // )
+  async findOwners({
+    userId,
+    query,
+  }: {
+    userId: number;
+    query?: string;
+  }) {
     const photos = await this.prisma.photo.findMany({
-      take: 3,
-      skip: cursor ? 1 : 0,
-      cursor: cursor ? { id: cursor } : undefined,
+      where: {
+        posterId: userId,
+        ...(query && {
+        OR: [
+          { title: { contains: query }},
+          { desc: { contains: query }},
+        ],
+      }),
+      },
       orderBy: { id: 'desc' },
       include: {
         poster: { select: { id: true, name: true }},

@@ -60,9 +60,13 @@ export class PhotosController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all photos (infinite scroll)' })
-  findAll(@Query('cursor') cursor?: string) {
-    return this.photosService.findAll(cursor ? Number(cursor) : 0);
+  @ApiOperation({ summary: 'Get photos (search + infinite scroll)' })
+  findAll(
+    @Query('query') query?: string,
+  ) {
+    return this.photosService.findAll({
+      query,
+    });
   }
 
   @UseGuards(JwtAuthGuard)
@@ -71,9 +75,12 @@ export class PhotosController {
   @ApiOperation({ summary: 'Get all owner photos (infinite scroll)' })
   owner(
     @CurrentUser() user: { userId: number },
-    @Query('cursor') cursor?: string
+    @Query('query') query?: string,
   ) {
-    return this.photosService.findOwners(user.userId, cursor ? Number(cursor) : 0);
+    return this.photosService.findOwners({
+      userId: user.userId,
+      query,
+    });
   }
 
   @Get('recent')
