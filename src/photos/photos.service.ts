@@ -90,6 +90,7 @@ export class PhotosService {
             ],
           }
         : undefined,
+      include: { poster: { select: { id: true, name: true } } },
       orderBy: { id: 'desc' },
     });
 
@@ -133,6 +134,7 @@ export class PhotosService {
           ],
         }),
       },
+      include: { poster: { select: { id: true, name: true } } },
       orderBy: { id: 'desc' },
     });
 
