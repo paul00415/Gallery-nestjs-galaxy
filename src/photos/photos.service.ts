@@ -110,34 +110,46 @@ export class PhotosService {
   async findOwners({
     userId,
     query,
+    cursor,
+    limit,
   }: {
     userId: number;
     query?: string;
+    cursor?: number;
+    limit: number;
   }) {
     const photos = await this.prisma.photo.findMany({
+      take: limit + 1,
+      ...(cursor && {
+        skip: 1,
+        cursor: { id: cursor },
+      }),
       where: {
         posterId: userId,
         ...(query && {
-        OR: [
-          { title: { contains: query }},
-          { desc: { contains: query }},
-        ],
-      }),
+          OR: [
+            { title: { contains: query } },
+            { desc: { contains: query } },
+          ],
+        }),
       },
       orderBy: { id: 'desc' },
-      include: {
-        poster: { select: { id: true, name: true }},
-      }
     });
 
-    return Promise.all(
-      photos.map(async (photo) => ({
-        ...photo,
-        imageUrl: await this.getSignedViewUrl(photo.imageUrl),
-      }))
-    )
+    const hasMore = photos.length > limit;
+    const items = hasMore ? photos.slice(0, limit) : photos;
+
+    return {
+      items: await Promise.all(
+        items.map(async (p) => ({
+          ...p,
+          imageUrl: await this.getSignedViewUrl(p.imageUrl),
+        })),
+      ),
+      nextCursor: hasMore ? items[items.length - 1].id : null,
+    };
   }
-  
+
   async findOne(id: number) {
     const photo = await this.prisma.photo.findUnique({
       where: { id },

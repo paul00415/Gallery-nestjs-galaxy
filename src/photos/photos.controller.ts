@@ -76,14 +76,18 @@ export class PhotosController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Get('owner')
-  @ApiOperation({ summary: 'Get all owner photos (infinite scroll)' })
+  @ApiOperation({ summary: 'Get owner photos (search + infinite scroll)' })
   owner(
     @CurrentUser() user: { userId: number },
     @Query('query') query?: string,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit = '12',
   ) {
     return this.photosService.findOwners({
       userId: user.userId,
       query,
+      cursor: cursor ? Number(cursor) : undefined,
+      limit: Number(limit),
     });
   }
 
