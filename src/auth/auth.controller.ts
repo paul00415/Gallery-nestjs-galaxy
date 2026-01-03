@@ -100,8 +100,21 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
   async googleAuthCallback(@Req() req, @Res() res) {
-    const tokens = await this.authService.googleLogin(req.user);
-    return res.status(200).json(tokens);
+    const { accessToken, refreshToken } =
+      await this.authService.googleLogin(req.user);
+
+    // Set refresh token cookie (same as normal login)
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/auth/refresh',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    // 🔑 Redirect to frontend with accessToken
+    const redirectUrl = `${process.env.FRONTEND_URL}/oauth/google?token=${accessToken}`;
+    return res.redirect(redirectUrl);
   }
 
   @Get('verify-email')
