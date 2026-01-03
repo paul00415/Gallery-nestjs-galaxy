@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Get, UseGuards, Headers, Req, Res, Query} from '@nestjs/common';
+import { Body, Controller, Post, Get, UseGuards, Headers, Req, Res, Query, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -23,8 +23,22 @@ export class AuthController {
   }
 
   @Post('login')
-  login(@Body() dto: LoginDto) {
-    return this.authService.login(dto);
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res,
+  ) {
+    const result = await this.authService.login(dto);
+    res.cookie('refreshToken', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/auth/refresh',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+    return {
+      accessToken: result.accessToken,
+      user: result.user
+    };
   }
 
   @UseGuards(JwtAuthGuard)
@@ -34,18 +48,45 @@ export class AuthController {
     return this.authService.getMe(user.userId);
   }
   
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Post('refresh')
-  refresh(@Body() dto: RefreshDto) {
-    return this.authService.refreshTokens(dto.refreshToken);
+  async refresh(
+    @Req() req,
+    @Res({ passthrough: true }) res,
+  ) {
+    const refreshToken = req.cookies?.refreshToken;
+    if (!refreshToken) {
+      throw new UnauthorizedException('No refresh token');
+    }
+
+    const tokens = await this.authService.refreshTokens(refreshToken);
+
+    res.cookie('refreshToken', tokens.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/auth/refresh',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return {
+      accessToken: tokens.accessToken,
+    };
   }
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Post('logout')
-  logout(@CurrentUser() user: { userId: number }) {
-    return this.authService.logout(user.userId);
+  async logout(
+    @CurrentUser() user: { userId: number },
+    @Res({ passthrough: true }) res,
+  ) {
+    await this.authService.logout(user.userId);
+
+    res.clearCookie('refreshToken', { path: '/auth/refresh' });
+
+    return { message: 'Logged out' };
   }
 
   // Google OAuth

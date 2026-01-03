@@ -19,9 +19,9 @@ export class AuthService {
     private readonly mailService: MailService,
   ) {}
 
-  // ===============================
+
   // REGISTER (EMAIL + PASSWORD)
-  // ===============================
+
   async register(dto: RegisterDto) {
     const existingUser = await this.prisma.user.findUnique({
       where: { email: dto.email },
@@ -49,9 +49,9 @@ export class AuthService {
     };
   }
 
-  // ===============================
+
   // LOGIN
-  // ===============================
+
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
@@ -74,13 +74,14 @@ export class AuthService {
       throw new ForbiddenException('Email not verified');
     }
 
-    const {accessToken, refreshToken} = await this.signTokens(user.id, user.email);
+    const { accessToken, refreshToken } = await this.signTokens(user.id, user.email);
     await this.updateRefreshTokenHash(user.id, refreshToken);
 
-    return { accessToken, user };
+    return { accessToken, refreshToken, user };
   }
 
   // GOOGLE LOGIN
+
   async googleLogin(googleUser: {
     email: string;
     name: string;
@@ -108,16 +109,16 @@ export class AuthService {
     return tokens;
   }
 
-  // ===============================
+
   // JWT SIGN
-  // ===============================
+
   private async signTokens(userId: number, email: string) {
     const payload = { sub: userId, email };
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwt.signAsync(payload, {
         secret: process.env.JWT_SECRET,
-        expiresIn: '15m',
+        expiresIn: '1m',
       }),
       this.jwt.signAsync(payload, {
         secret: process.env.JWT_REFRESH_SECRET,
@@ -140,9 +141,9 @@ export class AuthService {
     });
   }
 
-  // ===============================
+
   // GET ME
-  // ===============================
+
   async getMe(userId: number) {
     return this.prisma.user.findUnique({
       where: { id: userId },
@@ -156,9 +157,9 @@ export class AuthService {
     });
   }
 
-  // ===============================
+
   // REFRESH TOKENS
-  // ===============================
+
   async refreshTokens(refreshToken: string) {
     try {
       const payload = await this.jwt.verifyAsync(refreshToken, {
@@ -191,9 +192,8 @@ export class AuthService {
     }
   }
 
-  // ===============================
   // LOGOUT
-  // ===============================
+
   async logout(userId: number) {
     await this.prisma.user.update({
       where: { id: userId },
@@ -203,9 +203,9 @@ export class AuthService {
     return { message: 'Logged out successfully' };
   }
 
-  // ===============================
+
   // EMAIL VERIFICATION
-  // ===============================
+  
   private async sendEmailVerification(userId: number, email: string) {
     const token = this.jwt.sign(
       { userId },
