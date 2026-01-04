@@ -16,7 +16,7 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // ✅ Global validation (recommended)
+  // Global validation (recommended)
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -25,7 +25,7 @@ async function bootstrap() {
     }),
   );
 
-  // ✅ Swagger configuration
+  // Swagger configuration
   const config = new DocumentBuilder()
     .setTitle('Gallery API')
     .setDescription('API documentation for Gallery backend')

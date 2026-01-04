@@ -112,7 +112,7 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    // 🔑 Redirect to frontend with accessToken
+    // Redirect to frontend with accessToken
     const redirectUrl = `${process.env.FRONTEND_URL}/oauth/google?token=${accessToken}`;
     return res.redirect(redirectUrl);
   }
