@@ -9,7 +9,12 @@ export class JwtRefreshStrategy extends PassportStrategy(
 ) {
   constructor() {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        // Prioritize cookie-based refresh tokens (req may be undefined when called in some contexts)
+        (req) => req?.cookies?.refreshToken,
+        // Fallback to Authorization header bearer
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ]),
       secretOrKey: process.env.JWT_REFRESH_SECRET! as string,
     });
   }

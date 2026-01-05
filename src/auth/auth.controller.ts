@@ -30,8 +30,10 @@ export class AuthController {
     const result = await this.authService.login(dto);
     res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
+      // Use 'none' in production to allow cross-site cookies (requires secure=true).
+      // Use 'lax' in development to ease local testing with redirects.
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       path: '/auth/refresh',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
@@ -55,6 +57,8 @@ export class AuthController {
     @Req() req,
     @Res({ passthrough: true }) res,
   ) {
+    // Log presence of refresh cookie (do not log token value)
+    console.log('refresh cookie present:', !!req.cookies?.refreshToken);
     const refreshToken = req.cookies?.refreshToken;
     if (!refreshToken) {
       throw new UnauthorizedException('No refresh token');
@@ -106,8 +110,10 @@ export class AuthController {
     // Set refresh token cookie (same as normal login)
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
+      // Use 'none' in production to allow cross-site cookies (requires secure=true).
+      // Use 'lax' in development to ease local testing with redirects.
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       path: '/auth/refresh',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });

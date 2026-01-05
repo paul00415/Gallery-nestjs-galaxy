@@ -162,6 +162,7 @@ export class AuthService {
 
   async refreshTokens(refreshToken: string) {
     try {
+      console.log('refreshTokens: verifying token (value not logged)');
       const payload = await this.jwt.verifyAsync(refreshToken, {
         secret: process.env.JWT_REFRESH_SECRET,
       });
@@ -171,6 +172,7 @@ export class AuthService {
       });
 
       if (!user || !user.refreshToken) {
+        console.log('refreshTokens: no user or no stored refresh token');
         throw new ForbiddenException('Access denied');
       }
 
@@ -178,6 +180,8 @@ export class AuthService {
         refreshToken,
         user.refreshToken,
       );
+
+      console.log('refreshTokens: bcrypt compare result =', matches);
 
       if (!matches) {
         throw new ForbiddenException('Access denied');
@@ -187,7 +191,8 @@ export class AuthService {
       await this.updateRefreshTokenHash(user.id, tokens.refreshToken);
 
       return tokens;
-    } catch {
+    } catch (error) {
+      console.error('refreshTokens error:', error?.message ?? error);
       throw new ForbiddenException('Access denied');
     }
   }
