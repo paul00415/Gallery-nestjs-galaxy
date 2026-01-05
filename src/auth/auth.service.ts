@@ -233,8 +233,7 @@ export class AuthService {
         where: { id: payload.userId },
         data: { isEmailVerified: true },
       });
-
-      return { message: 'Email verified successfully. Please login' };
+      
     } catch {
       throw new BadRequestException('Invalid or expired token');
     }

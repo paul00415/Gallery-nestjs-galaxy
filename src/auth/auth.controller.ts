@@ -124,7 +124,10 @@ export class AuthController {
   }
 
   @Get('verify-email')
-  verifyEmail(@Query('token') token: string) {
-    return this.authService.verifyEmail(token);
+  async verifyEmail(@Query('token') token: string, @Res() res) {
+    await this.authService.verifyEmail(token);
+    // Redirect to frontend with accessToken
+    const redirectUrl = `${process.env.FRONTEND_URL}/email-verified`;
+    return res.redirect(redirectUrl);
   }
 }
